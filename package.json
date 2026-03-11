@@ -1,0 +1,10 @@
+{
+  "name": "ode-digital-twins",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

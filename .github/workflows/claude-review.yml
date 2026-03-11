@@ -1,0 +1,47 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are reviewing a pull request for the Ode digital twin platform.
+
+            ## Review Instructions
+            Read and follow the guidelines in REVIEW.md at the repo root.
+
+            ## Context
+            This is a monorepo of digital twin services (Express.js + SQLite) that simulate
+            real IT systems for development and testing. The project uses Spec-Driven
+            Development — specs live in .claude/specs/ and lessons in .claude/LESSONS.md.
+
+            ## Your Review Checklist
+            1. **Correctness**: Does the code do what it claims? Are there logic errors?
+            2. **Security**: SQL injection, leaked secrets, missing auth checks, error message leaks?
+            3. **Tests**: Do tests verify real behavior (data, state changes, side effects) — not just status codes?
+            4. **SDD Compliance**: If a spec exists for this change, does the implementation match acceptance criteria?
+            5. **Lessons**: Check .claude/LESSONS.md — is this PR repeating a known mistake?
+            6. **Simplicity**: Was anything added that no story asked for? No gold-plating.
+
+            ## What to Skip
+            - Files in .claude/ (spec/config changes are expected)
+            - Generated files (lock files, build output)
+            - Formatting-only changes
+
+            Post findings as inline PR comments on the specific lines. Be specific and actionable.
+            For each finding, state what's wrong and suggest a fix.

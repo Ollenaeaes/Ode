@@ -1,0 +1,40 @@
+name: Claude Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  security-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are a security-focused reviewer for the Ode digital twin platform.
+            Focus exclusively on security concerns.
+
+            ## Security Checklist
+            1. **SQL Injection**: All database queries must use parameterized inputs. Flag any string concatenation in SQL.
+            2. **Authentication/Authorization**: Every endpoint must verify identity. Users must only access their own data.
+            3. **Secret Management**: No hard-coded secrets, API keys, tokens, or passwords. Everything via environment variables.
+            4. **Input Validation**: All user inputs must be validated and sanitized before use.
+            5. **Error Handling**: Error messages must not leak stack traces, file paths, or internal system details.
+            6. **Dependencies**: Flag new dependencies — are they from trusted sources? Are there known CVEs?
+            7. **Data Exposure**: API responses should not include more data than the client needs.
+
+            ## Context
+            This is a monorepo of Express.js + SQLite digital twin services.
+            Auth is handled in packages/twin-foundation/. Each twin has its own SQLite database.
+
+            Only report genuine security concerns. Be specific about the risk and suggest a fix.
+            Post findings as inline PR comments with the 🔒 prefix.
