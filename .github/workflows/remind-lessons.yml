@@ -1,0 +1,32 @@
+name: Remind Lessons
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  remind:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.pulls.listReviewComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            const reviewFindings = comments.filter(c =>
+              c.user.login === 'claude[bot]' || c.user.type === 'Bot'
+            );
+            if (reviewFindings.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 📝 Lessons Reminder\n\nThis PR had **${reviewFindings.length}** review findings from Claude. To capture lessons learned:\n\n\`\`\`\n/learn-from-review\n\`\`\`\n\nRun this in Claude Code to update \`.claude/LESSONS.md\` so these patterns are avoided next time.`
+              });
+            }
